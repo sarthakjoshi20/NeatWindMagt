@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=1.5, viewport-fit=cover">
+    <title>Production Flow | Smart Dashboard + Print Layout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #eef2f9;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding-bottom: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* modern glassmorphic navbar */
+        .navbar {
+            background: rgba(26, 71, 125, 0.92);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+            padding: 0.6rem 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.3px;
+            color: white !important;
+        }
+        .navbar-brand i {
+            color: #f9b43a;
+            margin-right: 6px;
+        }
+        .nav-link {
+            color: rgba(255,255,240,0.85) !important;
+            font-weight: 500;
+            margin: 0 4px;
+            border-radius: 40px;
+            transition: 0.2s;
+        }
+        .nav-link i { margin-right: 5px; color: #ffcd7e; }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.18);
+            color: white !important;
+            transform: translateY(-1px);
+        }
+
+        /* cards & containers */
+        .dashboard-card {
+            border: none;
+            border-radius: 28px;
+            background: #ffffff;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            margin-bottom: 1.8rem;
+            transition: all 0.2s;
+        }
+        .card-header-custom {
+            background: #ffffff;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #eef2f5;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            margin: 0 0 1.5rem 0;
+        }
+        .stat-tile {
+            background: white;
+            border-radius: 28px;
+            padding: 1rem 0.8rem;
+            text-align: center;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .stat-tile.tile-primary { background: linear-gradient(145deg, #1a4972, #0e3a5f); color: white; }
+        .stat-tile.tile-success { background: linear-gradient(145deg, #1f6e43, #155a38); color: white; }
+        .stat-tile.tile-warning { background: linear-gradient(145deg, #c55a1a, #b1450c); color: white; }
+        .stat-tile.tile-info { background: linear-gradient(145deg, #5a4e8c, #483d73); color: white; }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; opacity: 0.8; }
+        .stat-value { font-size: 2rem; font-weight: 800; line-height: 1.2; margin: 8px 0 2px; word-break: break-word; }
+        .stat-sub { font-size: 0.7rem; opacity: 0.75; }
+
+        /* filter bar - fully responsive */
+        .filter-bar {
+            background: #f9fafc;
+            border-radius: 60px;
+            padding: 0.7rem 1.2rem;
+            margin-bottom: 1.4rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            flex: 2;
+        }
+        .filter-input {
+            border-radius: 40px;
+            border: 1px solid #dce3ec;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            background: white;
+            transition: 0.2s;
+        }
+        .btn-soft {
+            border-radius: 40px;
+            padding: 0.45rem 1.2rem;
+            font-weight: 500;
+            background: white;
+            border: 1px solid #dce3ec;
+        }
+        .btn-soft-primary {
+            background: #0d6efd;
+            border: none;
+            color: white;
+        }
+        .badge-chip {
+            background: #eef2ff;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* table modern - horizontal scroll on small screens only */
+        .table-wrapper {
+            border-radius: 20px;
+            overflow-x: auto;
+            background: white;
+            width: 100%;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            min-width: 1100px;
+        }
+        .data-table th {
+            background: #1b2b40;
+            color: white;
+            padding: 12px 10px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #edf2f7;
+            vertical-align: middle;
+        }
+        .data-table tr:hover td {
+            background-color: #f8faff;
+        }
+        .action-icons a {
+            margin: 0 4px;
+            font-size: 0.9rem;
+            transition: 0.1s;
+        }
+        .chart-modern {
+            background: white;
+            border-radius: 24px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+        }
+        .live-pulse {
+            display: inline-flex;
+            align-items: center;
+            background: #eef2ff;
+            border-radius: 60px;
+            padding: 4px 14px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            gap: 8px;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #e53e3e;
+            border-radius: 50%;
+            animation: pulse 1.4s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1.2); } }
+        
+        /* PRINT LAYOUT (elegant & minimal) */
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0.2in;
+            }
+            .no-print, .navbar, .filter-bar, .btn-group-custom, .btn, .action-icons, .chart-modern, .live-pulse,
+            #exportExcelBtn, #exportPdfBtn, #printBtn, .clear-filters, .filter-group, .card-header-custom .btn,
+            .stat-tile .stat-icon, .no-print-all {
+                display: none !important;
+            }
+            .dashboard-card, .stat-grid, .stat-tile, .table-wrapper {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                break-inside: avoid;
+            }
+            .stat-tile {
+                background: #f3f4f6 !important;
+                color: #111 !important;
+                border: 1px solid #aaa;
+            }
+            .stat-tile.tile-primary, .stat-tile.tile-success, .stat-tile.tile-warning, .stat-tile.tile-info {
+                background: #f1f5f9 !important;
+                color: #0f172a !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .data-table th {
+                background: #2c3e50 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .data-table td {
+                border-bottom: 1px solid #bbb;
+            }
+            .card-header-custom {
+                border-bottom: 2px solid #aaa;
+                background: white;
+            }
+            h4, h5 {
+                color: black;
+            }
+            footer {
+                display: none;
+            }
+        }
+
+        /* Responsive breakpoints - flawless mobile adaptation */
+        @media (max-width: 992px) {
+            .stat-grid { grid-template-columns: repeat(2,1fr); gap: 12px; }
+            .filter-bar { flex-direction: column; align-items: stretch; border-radius: 28px; }
+            .filter-group { width: 100%; justify-content: space-between; }
+            .filter-input { flex: 1; }
+            .card-header-custom { flex-direction: column; align-items: stretch; }
+            .btn-group-custom { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+        }
+        @media (max-width: 640px) {
+            .stat-value { font-size: 1.4rem; }
+            .stat-grid { grid-template-columns: 1fr; gap: 10px; }
+            .filter-group { flex-direction: column; align-items: stretch; }
+            .filter-input { width: 100% !important; }
+            .badge-chip { white-space: normal; text-align: center; }
+            .live-pulse { justify-content: center; margin-top: 8px; width: 100%; }
+            .card-header-custom h4 { font-size: 1.25rem; }
+        }
+        @media (max-width: 480px) {
+            .stat-value { font-size: 1.2rem; }
+            .stat-tile { padding: 0.8rem 0.4rem; }
+            .btn-group-custom .btn { font-size: 0.7rem; padding: 0.25rem 0.8rem; }
+            .data-table th, .data-table td { padding: 6px 5px; font-size: 0.65rem; }
+        }
+        .btn-sm-custom {
+            padding: 0.3rem 0.9rem;
+            font-size: 0.7rem;
+        }
+        i.icon-mr { margin-right: 5px; }
+        .container-fluid {
+            padding-left: clamp(0.75rem, 3vw, 1.5rem);
+            padding-right: clamp(0.75rem, 3vw, 1.5rem);
+        }
+    </style>
+</head>
+<body>
+       
+<!-- NAVBAR (same concept with style) -->
+<nav class="navbar navbar-expand-lg no-print">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="fas fa-industry"></i> NeatWind</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fas fa-bars text-white"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="/punchingreport"><i class="fas fa-plus-circle"></i> New Entry</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/punchingproductionrecord"><i class="fas fa-chart-line"></i> Records Hub</a></li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logoutuser"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-3 px-md-4 py-3">
+    <!-- Stats cards redesigned fully responsive -->
+    <div class="stat-grid">
+        <div class="stat-tile tile-primary"><div><i class="fas fa-calendar-day stat-icon"></i></div><div class="stat-label">TODAY OUTPUT</div><div class="stat-value" id="todayTotalWeight">0.00 <span style="font-size:1rem;">kg</span></div><div class="stat-sub">production</div></div>
+        <div class="stat-tile tile-success"><div><i class="fas fa-chart-line stat-icon"></i></div><div class="stat-label">WEEKLY TOTAL</div><div class="stat-value" id="weeklyTotalWeight">0.00 <span style="font-size:1rem;">kg</span></div><div class="stat-sub">last 7 days</div></div>
+        <div class="stat-tile tile-warning"><div><i class="fas fa-calendar-alt stat-icon"></i></div><div class="stat-label">MONTHLY TOTAL</div><div class="stat-value" id="monthlyTotalWeight">0.00 <span style="font-size:1rem;">kg</span></div><div class="stat-sub">current month</div></div>
+        <div class="stat-tile tile-info"><div><i class="fas fa-sliders-h stat-icon"></i></div><div class="stat-label">FILTERED SUM</div><div class="stat-value" id="totalWeightSum">0.00 <span style="font-size:1rem;">kg</span></div><div class="stat-sub">active filters</div></div>
+    </div>
+
+    <!-- Weekly chart area (reimagined) -->
+    <div class="chart-modern no-print">
+        <div class="d-flex justify-content-between flex-wrap align-items-center mb-3 gap-2">
+            <h5 class="mb-0 fw-semibold"><i class="fas fa-chart-line text-primary me-2"></i>Weekly Customer Trend · Total Weight (kg)</h5>
+            <div class="live-pulse"><span class="live-dot"></span> LIVE DATA · Rolling 4 weeks</div>
+        </div>
+        <canvas id="weeklyCustomerChart" height="250" style="max-height: 260px; width: 100%;"></canvas>
+        <div class="text-muted small mt-2 text-center">* current week + previous 3 weeks | each line = customer production evolution</div>
+    </div>
+
+    <!-- MAIN DASHBOARD CARD -->
+    <div class="dashboard-card">
+        <div class="card-header-custom">
+            <h4 class="mb-0 fw-semibold"><i class="fas fa-clipboard-list me-2 text-primary"></i>Production & Downtime Log</h4>
+            <div class="btn-group-custom">
+                <button id="exportExcelBtn" class="btn btn-sm btn-outline-success rounded-pill"><i class="fas fa-file-excel"></i> Excel</button>
+                <button id="printBtn" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fas fa-print"></i> Print</button>
+                <a href="/punchingreport" class="btn btn-sm btn-primary rounded-pill ms-1"><i class="fas fa-plus-circle"></i> Add Record</a>
+            </div>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            <!-- Filter bar new layout fully responsive -->
+            <div class="filter-bar no-print">
+                <div class="filter-group">
+                    <input type="text" id="searchInput" class="filter-input" placeholder="🔍 Search operator, customer, material..." style="flex:2;">
+                    <input type="date" id="startDateFilter" class="filter-input" style="width:auto; min-width:130px;">
+                    <span class="text-muted d-none d-sm-inline">→</span>
+                    <input type="date" id="endDateFilter" class="filter-input" style="width:auto; min-width:130px;">
+                    <button id="clearFiltersBtn" class="btn btn-soft clear-filters"><i class="fas fa-undo-alt"></i> Reset</button>
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-start">
+                    <span class="badge-chip" id="activeFilterBadge"><i class="fas fa-filter"></i> All records</span>
+                    <span class="badge-chip ms-1"><i class="fas fa-weight-hanging"></i> Total Rows: <span id="recordCount">0</span></span>
+                </div>
+            </div>
+            
+            <!-- Responsive Table with horizontal scroll only if necessary -->
+            <div class="table-wrapper">
+                <table class="data-table" id="recordTable">
+                    <thead>
+                        <tr><th>#</th><th>Date</th><th>Operator</th><th>Shift</th><th>Machine</th><th>Customer</th><th>Project</th><th>Set</th><th>Material</th><th>Sheet Qty</th><th>Length</th><th>Width</th><th>Thickness</th><th>Total Weight</th><th>Process Time</th><th>M Maint Time</th><th>Maintances Reason</th><th>Action Taken</th><th>Rejection Qty</th><th class="no-print">Actions</th></tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+                <div id="noRecordsMsg" class="text-center py-4 text-muted d-none">📭 No matching production records found.</div>
+            </div>
+        </div>
+        <div class="card-footer bg-transparent border-top small text-muted no-print ms-4 ">
+            <i class="fas fa-chart-line me-1"></i> Live week (Mon-Sun) auto-updated. Filters affect table, filtered weight & chart stays global.
+        </div>
+    </div>
+    <footer class="text-center text-muted small mt-3 no-print">📊 Production Flow — interactive weekly view & smart print layout</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ------------------ DATA INJECTION (EJS similar) ------------------
+let originalRecords = [];
+<% if (records && records.length) { %>
+    const rawData = <%- JSON.stringify(records) %>;
+    originalRecords = rawData.map((row, idx) => {
+        let rawDate = row.p_date;
+        let dateObj = null;
+        if (rawDate) {
+            dateObj = new Date(rawDate);
+            if (isNaN(dateObj.getTime())) dateObj = null;
+        }
+        let numericWt = 0;
+        if (row.p_totalweight) {
+            let wtStr = String(row.p_totalweight).replace(/[^0-9.-]/g, '');
+            numericWt = parseFloat(wtStr) || 0;
+        }
+        let sheetQtyNum = parseFloat(row.p_sheetqty) || 0;
+        return {
+            ...row,
+            displayId: idx + 1,
+            dateObj: dateObj,
+            formattedDate: dateObj ? dateObj.toLocaleDateString('en-GB') : (row.p_date ? new Date(row.p_date).toLocaleDateString('en-GB') : '-'),
+            numericWeight: numericWt,
+            sheetQtyNum: sheetQtyNum,
+            customerName: (row.p_customer || '').trim(),
+            operatorName: row.p_operator_name || '',
+            shift: row.p_shift || '',
+            project: row.p_project_name || '',
+            material: row.p_material || '',
+            downtReason: row.p_mureason || '',
+            corrective: row.p_mjustification || '',
+            rejection: row.p_rejectionqty || ''
+        };
+    });
+<% } else { originalRecords = []; } %>
+
+// WEIGHT CARDS helpers
+function getTodayTotal() {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+    return originalRecords.filter(r => r.dateObj && r.dateObj >= today && r.dateObj < tomorrow).reduce((sum,r)=> sum + r.numericWeight, 0);
+}
+function getWeeklyTotal() {
+    const now = new Date(); const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7); weekAgo.setHours(0,0,0,0);
+    return originalRecords.filter(r => r.dateObj && r.dateObj >= weekAgo && r.dateObj <= now).reduce((sum,r)=> sum + r.numericWeight, 0);
+}
+function getMonthlyTotal() {
+    const today = new Date(); const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    return originalRecords.filter(r => r.dateObj && r.dateObj >= monthStart && r.dateObj <= today).reduce((sum,r)=> sum + r.numericWeight, 0);
+}
+function updateWeightCards() {
+    document.getElementById("todayTotalWeight").innerHTML = getTodayTotal().toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + " <span style='font-size:1rem;'>kg</span>";
+    document.getElementById("weeklyTotalWeight").innerHTML = getWeeklyTotal().toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + " <span style='font-size:1rem;'>kg</span>";
+    document.getElementById("monthlyTotalWeight").innerHTML = getMonthlyTotal().toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + " <span style='font-size:1rem;'>kg</span>";
+}
+
+// Filters
+let currentTextFilter = "", currentStartDate = null, currentEndDate = null;
+const searchInput = document.getElementById("searchInput");
+const startDateInput = document.getElementById("startDateFilter");
+const endDateInput = document.getElementById("endDateFilter");
+const clearBtn = document.getElementById("clearFiltersBtn");
+
+function parseDateFromInput(dateStr) { if(!dateStr) return null; const p = dateStr.split('-'); if(p.length!==3) return null; return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])); }
+function matchesDateRange(rec) {
+    if(!currentStartDate && !currentEndDate) return true;
+    if(!rec.dateObj) return false;
+    const d = new Date(rec.dateObj.getFullYear(), rec.dateObj.getMonth(), rec.dateObj.getDate());
+    if(currentStartDate && currentEndDate) return d >= currentStartDate && d <= currentEndDate;
+    if(currentStartDate) return d >= currentStartDate;
+    if(currentEndDate) return d <= currentEndDate;
+    return true;
+}
+function matchesTextSearch(rec) {
+    if(!currentTextFilter.trim()) return true;
+    const f = currentTextFilter.toLowerCase().trim();
+    const fields = [rec.operatorName, rec.customerName, rec.project, rec.material, rec.downtReason, rec.corrective, rec.shift];
+    return fields.some(v => v && v.toLowerCase().includes(f));
+}
+function getFilteredRecords() { return originalRecords.filter(r => matchesDateRange(r) && matchesTextSearch(r)); }
+function calcFilteredWeight() { return getFilteredRecords().reduce((s,r)=> s + r.numericWeight, 0); }
+
+function renderTableAndStats() {
+    const filtered = getFilteredRecords();
+    const totalWt = calcFilteredWeight();
+    document.getElementById("totalWeightSum").innerHTML = totalWt.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + " <span style='font-size:1rem;'>kg</span>";
+    document.getElementById("recordCount").innerText = filtered.length;
+    const badge = document.getElementById("activeFilterBadge");
+    const hasActive = currentTextFilter.trim() || currentStartDate || currentEndDate;
+    if(hasActive) badge.innerHTML = `<i class="fas fa-sliders-h"></i> Filtered: ${filtered.length} rows | ${totalWt.toFixed(1)} kg`;
+    else badge.innerHTML = `<i class="fas fa-database"></i> All records: ${originalRecords.length} entries`;
+    const tbody = document.getElementById("tableBody");
+    if(filtered.length === 0) { tbody.innerHTML = ''; document.getElementById("noRecordsMsg").classList.remove("d-none"); return; }
+    document.getElementById("noRecordsMsg").classList.add("d-none");
+    let html = "";
+    filtered.forEach((rec, idx) => {
+        const actions = `<div class="action-icons no-print"><a href="/punchingproductionedit/${rec.p_id}" class="btn btn-outline-primary"><i class="fas fa-edit"></i></a> <a href="/punchingdelete/${rec.p_id}" onclick="return confirm('Delete?')" class="btn btn-outline-danger mt-1"><i class="fas fa-trash-alt"></i></a></div>`;
+        html += `<tr>
+            <td>${rec.displayId}</td><td>${rec.formattedDate}</td><td>${escapeHtml(rec.operatorName)}</td><td>${escapeHtml(rec.shift)}</td><td>${escapeHtml(rec.p_machine || '')}</td>
+            <td>${escapeHtml(rec.customerName)}</td><td>${escapeHtml(rec.project)}</td><td>${escapeHtml(rec.p_set_name||'')}</td>
+            <td>${escapeHtml(rec.material)}</td><td>${rec.p_sheetqty??''}</td><td>${rec.p_length??''}</td><td>${rec.p_width??''}</td>
+            <td>${rec.p_thickness??''}</td><td class="fw-bold">${rec.numericWeight.toFixed(2)}</td><td>${rec.p_time??''} Min</td>
+            <td>${rec.p_m_processtime??''} Min</td><td>${escapeHtml(rec.downtReason)} <br> (${escapeHtml(rec.other_gmr)} )</td><td>${escapeHtml(rec.corrective)}</td>
+            <td>${rec.rejection??''}</td><td class="no-print">${actions}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+
+function refreshAll() {
+    currentTextFilter = searchInput?.value || "";
+    currentStartDate = startDateInput?.value ? parseDateFromInput(startDateInput.value) : null;
+    currentEndDate = endDateInput?.value ? parseDateFromInput(endDateInput.value) : null;
+    renderTableAndStats();
+    updateWeightCards();
+    buildWeeklyChart();
+}
+function clearFilters() { searchInput.value = ""; startDateInput.value = ""; endDateInput.value = ""; refreshAll(); }
+
+// ---------- WEEKLY CHART (advanced redesign) ----------
+function getWeekRange(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diffMon = day === 0 ? -6 : 1 - day;
+    const mon = new Date(d); mon.setDate(d.getDate() + diffMon); mon.setHours(0,0,0,0);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+    return { start: mon, end: sun };
+}
+function getLastFourWeeks() {
+    const today = new Date();
+    let weeks = [getWeekRange(today)];
+    for(let i=1;i<4;i++) {
+        let prevStart = new Date(weeks[0].start); prevStart.setDate(prevStart.getDate() - 7);
+        weeks.unshift(getWeekRange(prevStart));
+    }
+    return weeks;
+}
+function buildWeeklyChart() {
+    const weeks = getLastFourWeeks();
+    const customersSet = new Set();
+    originalRecords.forEach(r => { if(r.customerName && r.customerName.trim()) customersSet.add(r.customerName.trim()); });
+    let customers = Array.from(customersSet).sort();
+    const datasets = [];
+    const palette = ['#3b82f6','#f97316','#10b981','#8b5cf6','#ef4444','#06b6d4','#ec489a','#84cc16','#f59e0b'];
+    customers.forEach((cust, idx) => {
+        let weeklyData = new Array(weeks.length).fill(0);
+        originalRecords.forEach(rec => {
+            if((rec.customerName||'').trim() === cust && rec.numericWeight>0 && rec.dateObj) {
+                for(let w=0; w<weeks.length; w++) {
+                    if(rec.dateObj >= weeks[w].start && rec.dateObj <= weeks[w].end) {
+                        weeklyData[w] += rec.numericWeight;
+                        break;
+                    }
+                }
+            }
+        });
+        if(weeklyData.some(v=>v>0)) {
+            datasets.push({
+                label: cust.length>18 ? cust.slice(0,16)+'..' : cust,
+                data: weeklyData,
+                borderColor: palette[idx % palette.length],
+                backgroundColor: 'transparent',
+                borderWidth: 2.2,
+                tension: 0.2,
+                pointRadius: 3,
+                pointBackgroundColor: palette[idx % palette.length],
+                fill: false
+            });
+        }
+    });
+    const labels = weeks.map((w,idx) => {
+        const s = w.start.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+        const e = w.end.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+        return idx === weeks.length-1 ? `⚡ CURRENT (${s}-${e})` : `${s} – ${e}`;
+    });
+    const ctx = document.getElementById('weeklyCustomerChart').getContext('2d');
+    if(window.weeklyChart) window.weeklyChart.destroy();
+    if(datasets.length) {
+        window.weeklyChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position:'top', labels:{font:{size:9}, boxWidth:10} }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)} kg` } } }, scales: { y: { title:{display:true, text:'Total Weight (kg)', font:{size:9}}, beginAtZero: true }, x: { ticks: { rotation: 18, font:{size:7} } } } }
+        });
+    } else {
+        if(window.weeklyChart) window.weeklyChart.destroy();
+        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+        ctx.font = "12px Inter";
+        ctx.fillStyle = "#888";
+        ctx.fillText("📉 No production data to display chart", 30, 100);
+    }
+}
+
+// Export enhanced
+function exportToExcel() {
+    const data = getFilteredRecords();
+    if(!data.length) return alert("No records to export.");
+    const headers = ["ID","Date","Operator","Shift","Customer","Project","Set","Material","Sheet Qty","Length","Width","Thickness","Total Weight(kg)","Process Time","Maintenance Time","Reason","Corrective Action","Rejection Qty"];
+    const rows = data.map(r=>[r.displayId, r.formattedDate, r.operatorName, r.shift, r.customerName, r.project, r.g_set_name||'', r.material, r.g_sheetqty||'', r.g_length||'', r.g_width||'', r.g_thickness||'', r.numericWeight.toFixed(2), r.g_time||'', r.g_m_processtime||'', r.downtReason, r.corrective, r.rejection||'']);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Production_Report");
+    XLSX.writeFile(wb, `production_export_${Date.now()}.xlsx`);
+}
+function exportToPDF() {
+    const element = document.querySelector('.dashboard-card').cloneNode(true);
+    element.querySelectorAll('.no-print, .btn-group-custom, .filter-bar, .action-icons, #clearFiltersBtn, .card-header-custom .btn, .chart-modern, .live-pulse').forEach(el => el?.remove());
+    const tempDiv = document.createElement('div'); tempDiv.appendChild(element); document.body.appendChild(tempDiv);
+    html2pdf().set({margin:[0.4,0.4,0.4,0.4], filename:'production_report.pdf', html2canvas:{scale:2}, jsPDF:{unit:'in', format:'a3', orientation:'landscape'}}).from(element).save().then(()=> document.body.removeChild(tempDiv));
+}
+function printSmart() {
+    const printContent = document.querySelector('.dashboard-card').cloneNode(true);
+    printContent.querySelectorAll('.no-print, .btn, .filter-bar, .action-icons, .chart-modern, .live-pulse, .btn-group-custom').forEach(el => el?.remove());
+    const win = window.open('', '_blank');
+    win.document.write(`<html><head><title>Production Report</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><style>body {padding: 15px;} table {width:100%; border-collapse: collapse;} th, td {border:1px solid #aaa; padding: 6px; font-size: 10px;} .stat-tile {margin:5px;}</style></head><body>${printContent.innerHTML}</body></html>`);
+    win.document.close(); win.print(); win.close();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    searchInput?.addEventListener("input", refreshAll);
+    startDateInput?.addEventListener("change", refreshAll);
+    endDateInput?.addEventListener("change", refreshAll);
+    clearBtn?.addEventListener("click", clearFilters);
+    document.getElementById("exportExcelBtn")?.addEventListener("click", exportToExcel);
+    document.getElementById("exportPdfBtn")?.addEventListener("click", exportToPDF);
+    document.getElementById("printBtn")?.addEventListener("click", printSmart);
+    refreshAll();
+    if(originalRecords.length===0) document.getElementById("tableBody").innerHTML = `<tr><td colspan="19" class="text-center py-4">📋 No records — click 'Add Record' to start</td></tr>`;
+    updateWeightCards();
+    buildWeeklyChart();
+    setInterval(() => { buildWeeklyChart(); updateWeightCards(); }, 65000);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=1.5">
+  <title>Production Entry | Offcuts Material System</title>
+
+  <!-- Bootstrap 5 & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.4rem;
+      letter-spacing: 0.5px;
+      color: white !important;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .navbar-brand i {
+      font-size: 1.6rem;
+      color: #ffd966;
+    }
+
+    .navbar-nav .nav-link {
+      color: rgba(255, 255, 255, 0.9) !important;
+      font-weight: 500;
+      margin: 0 0.2rem;
+      padding: 0.5rem 1rem !important;
+      border-radius: 30px;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.95rem;
+    }
+
+    .navbar-nav .nav-link i {
+      font-size: 1rem;
+      color: #ffd966;
+    }
+
+    .navbar-nav .nav-link:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white !important;
+      transform: translateY(-1px);
+    }
+
+    .navbar-nav .nav-link.active {
+      background: rgba(255, 255, 255, 0.2);
+      color: white !important;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .navbar-toggler {
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      padding: 0.4rem 0.7rem;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+    }
+
+    .container {
+      max-width: 1400px;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .card {
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      border-bottom: none;
+      padding: 1rem 1.25rem;
+    }
+
+    .card-header h4 {
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0;
+      font-size: 1.1rem;
+      color: white;
+    }
+
+    .card-header h4 i {
+      margin-right: 8px;
+      font-size: 1.2rem;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+      background: white;
+    }
+
+    .form-label {
+      font-weight: 600;
+      font-size: 0.75rem;
+      margin-bottom: 0.4rem;
+      color: #2c3e66;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      background-color: #fefefe;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: #2a5298;
+      box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.15);
+      outline: none;
+    }
+
+    .form-control[readonly] {
+      background-color: #f8f9fc;
+      font-weight: 500;
+      color: #1e3c72;
+    }
+
+    .required {
+      color: #dc3545;
+      font-weight: 700;
+      margin-left: 3px;
+    }
+
+    hr {
+      margin: 1.2rem 0;
+      border: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #2a5298, #1e3c72, transparent);
+      opacity: 0.3;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+      border: none;
+      border-radius: 40px;
+      padding: 0.6rem 1.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      box-shadow: 0 3px 8px rgba(40, 167, 69, 0.25);
+    }
+
+    .btn-success:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 12px rgba(40, 167, 69, 0.35);
+    }
+
+    .btn-secondary {
+      border-radius: 40px;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .btn-sm {
+      border-radius: 40px;
+      font-weight: 500;
+      padding: 0.35rem 1rem;
+      font-size: 0.75rem;
+    }
+
+    .badge-soft {
+      background: #eef2ff;
+      color: #1e3c72;
+      border-radius: 30px;
+      padding: 4px 10px;
+      font-size: 0.65rem;
+    }
+
+    .text-muted-info {
+      font-size: 0.7rem;
+      color: #6c8dae;
+      margin-top: 5px;
+      display: inline-block;
+    }
+
+    @media (max-width: 768px) {
+      .card-header h4 {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      .btn-success, .btn-secondary {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .card-body {
+        padding: 1rem;
+      }
+      .form-control, .form-select {
+        font-size: 0.85rem;
+      }
+    }
+
+    .reset-notice {
+      background: #eef2ff;
+      border-left: 4px solid #2a5298;
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+        <i class="fas fa-industry"></i> NeatWind
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarLinks" 
+              aria-controls="navbarLinks" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarLinks">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active"><i class="fas fa-plus-circle"></i> New Entry</a>
+          </li>
+          <li class="nav-item">
+            <% if(operator[0].role == "admin"){ %>
+              <a class="nav-link" href="/admin_punching_dashboard"><i class="fas fa-chart-line"></i> Records Dashboard</a>
+            <% }else{ %>
+              <a class="nav-link" href="/punchingproductionrecord"><i class="fas fa-chart-line"></i> Records Dashboard</a>
+            <% } %>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="/logoutuser"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-3 py-md-4">
+    <div class="card">
+      <% if(operator[0].role == "admin"){ %>
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-cube me-2"></i>Punching Daily Entry Form
+            <a href="/admin_punching_dashboard" style="text-decoration: none;">
+              <button class="btn btn-success btn-sm" type="button">
+              <i class="fas fa-chart-simple me-1"></i> Production & Downtime Records
+              </button>
+            </a>
+          </h4>
+        </div>
+      <% }else{ %>
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-cube me-2"></i>Punching Daily Entry Form
+            <a href="/punchingproductionrecord" style="text-decoration: none;">
+              <button class="btn btn-success btn-sm" type="button">
+              <i class="fas fa-chart-simple me-1"></i> Production & Downtime Records
+              </button>
+            </a>
+          </h4>
+        </div>
+      <% } %>
+
+      <div class="card-body">
+        <form method="post" action="/save_punchiing_details" id="productionForm">
+          <div class="row g-3 g-md-4">
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label"><i class="far fa-calendar-alt me-1"></i> Timestamp <span class="required">*</span></label>
+              <input type="date" class="form-control" name="p_date" id="p_date" required>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label"><i class="fas fa-user-circle me-1"></i> Operator Name</label>
+              <input type="text" name="p_operator_name" class="form-control" id="operatorSelect" value="<%= operator[0].oname %>" readonly>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label"><i class="fas fa-clock me-1"></i> Shift</label>
+              <select class="form-select" name="p_shift">
+                <option value="">-- Select Shift --</option>
+                <option value="1st">1st</option>
+                <option value="2nd">2nd</option>
+                <option value="3rd">3rd</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label"><i class="fas fa-clock me-1"></i> Machine</label>
+              <select class="form-select" name="p_machine">
+                <option value="">-- Select Machine --</option>
+                <option value="Amada">Amada</option>
+                <option value="Accur Max">Accur Max</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label class="form-label">
+                    <i class="fas fa-building me-1"></i> Customer Name
+                    <span class="required">*</span>
+                </label>
+                <select name="p_customer" id="customerSelect" class="form-select" required>
+                    <option value="">-- Select Customer --</option>
+                    <% for(let i=0; i<customer.length; i++){ %>
+                        <option value="<%= customer[i].cname %>">
+                            <%= customer[i].cname %>
+                        </option>
+                    <% } %>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label"><i class="fas fa-diagram-project me-1"></i> Project Name <span class="required">*</span></label>
+              <select name="p_project_name" id="projectSelect" class="form-select" required>
+                  <option value="">-- Select Project --</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label"><i class="fas fa-layer-group me-1"></i> Set</label>
+              <select name="p_set_name" id="setSelect" class="form-select">
+                <option value="">-- Select Set --</option>
+                <% for(let i = 0; i < 200 ; i++) { %>
+                        <option value="<%= i + 1 %>">
+                            <%= i+1 %>
+                        </option>
+                <% } %>
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label"><i class="fas fa-database me-1"></i> Material <span class="required">*</span></label>
+              <select name="p_material" id="materialSelect" class="form-select" required>
+                <option value="">-- Select Material --</option>
+                <% for(let i = 0; i < material.length; i++) { %>
+                        <option value="<%= material[i].mname %>">
+                            <%= material[i].mname %>
+                        </option>
+                    <% } %>
+              </select>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label"><i class="fas fa-hashtag me-1"></i> Sheet Qty</label>
+              <select id="qty" class="form-select calculate" name="p_sheetqty">
+                    <option value="">-- Select Sheet Quantity --</option>
+                        <% for(let i = 0; i < 100 ; i++) { %>
+                            <option value="<%= i + 1 %>">
+                                <%= i+1 %>
+                            </option>
+                        <% } %>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label"><i class="fas fa-arrows-left-right me-1"></i> Length (mm)</label>
+              <input type="number" step="0.01" id="length" class="form-control calculate" name="p_length" placeholder="mm">
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label"><i class="fas fa-arrows-up-down me-1"></i> Width (mm)</label>
+              <input type="number" step="0.01" id="width" class="form-control calculate" name="p_width" placeholder="mm">
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label"><i class="fas fa-chart-line me-1"></i> Thickness (mm)</label>
+              <input type="number" step="0.01" id="thickness" class="form-control calculate" name="p_thickness" placeholder="mm">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label"><i class="fas fa-weight-hanging me-1"></i> Total Weight (Kg)</label>
+              <input type="text" id="totalWeight" class="form-control bg-light" readonly name="p_totalweight" placeholder="Auto calculated (density-based)">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label"><i class="fas fa-hourglass-half me-1"></i> Machine Start Time (HH:MM)</label>
+              <input type="time" class="form-control" id="startTime" step="60" name="p_start_time">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label"><i class="fas fa-hourglass-half me-1"></i> Machine End Time (HH:MM)</label>
+              <input type="time" class="form-control" id="endTime" step="60" name="p_end_time">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label"><i class="fas fa-hourglass-half me-1"></i> Process Time (HH:MM)</label>
+              <input type="text" class="form-control bg-light" id="processTimeDisplay" readonly placeholder="Auto calculated (HH:MM)">
+              <input type="hidden" id="processTimeHidden" name="p_process_time">
+            </div>
+
+            <div class="col-12"><hr></div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label"><i class="fas fa-tools me-1"></i> Machine Undermaintenance Time (min)</label>
+              <input type="time" class="form-control" name="p_m_processtime" placeholder="eg 2:30 Min">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label"><i class="fas fa-exclamation-triangle me-1"></i> Machine Undermaintenance Reason</label>
+              <select class="form-select" id="mureasonSelect" name="p_mureason">
+                <option value="">-- Select Reason --</option>
+                <option value="Mechanical Issue">🔧 Mechanical Issue</option>
+                <option value="Electrical fault">⚡ Electrical fault</option>
+                <option value="Material Shortage">📦 Material Shortage</option>
+                <option value="Power Interruption">🔌 Power Interruption</option>
+                <option value="Sanctioned Break">☕ Sanctioned Break</option>
+                <option value="Line Changeover">🔄 Line Changeover</option>
+                <option value="Other/Unclassified">❓ Other/Unclassified</option>
+              </select>
+              <div id="otherReasonDiv" style="display: none; margin-top: 10px;">
+                <input type="text" class="form-control" name="other_gmr" id="otherReasonInput" placeholder="Please specify the reason..." value="">
+                <small class="text-muted-info"><i class="fas fa-info-circle"></i> Please provide details</small>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label"><i class="fas fa-clipboard-list me-1"></i> Justification & Corrective Action</label>
+              <input type="text" class="form-control" name="p_mjustification" placeholder="Describe actions taken">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label"><i class="fas fa-times-circle me-1"></i> Rejection Quantity</label>
+              <input type="text" class="form-control" name="p_rejectionqty" placeholder="Number of rejected parts">
+            </div>
+
+            <div class="col-12">
+              <div class="d-flex flex-column flex-sm-row justify-content-end gap-3 mt-3">
+                <button type="reset" class="btn btn-secondary px-4 py-2 order-2 order-sm-1"><i class="fas fa-undo-alt me-1"></i> Reset</button>
+                <button type="submit" onclick="return confirmSubmit()" class="btn btn-success px-5 py-2 order-1 order-sm-2"><i class="fas fa-save me-2"></i> Save Record</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer bg-white border-0 text-center pb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span class="badge-soft"><i class="fas fa-chart-line"></i> Material Density (g/cm³): MS=7.85, ALUMINIUM=2.70, SS=7.93, GI=7.85, HRPO=7.85, PERFORATED=7.85 | Weight = L×W×Th×Qty × (Density/1000) kg</span>
+        <span class="reset-notice"><i class="fas fa-sync-alt"></i> Session data only — no local storage</span>
+      </div>
+    </div>
+  </div>
+
+<!-- Professional Operator Modal -->
+<div class="modal fade" id="operatorModal" tabindex="-1" aria-labelledby="operatorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      
+      <!-- Modern Header with accent -->
+      <div class="modal-header border-0 pt-4 px-4">
+        <div class="d-flex align-items-center gap-2">
+          <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-person-plus text-primary" viewBox="0 0 16 16">
+              <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H1s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C9.516 10.68 8.289 10 6 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+              <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5z"/>
+            </svg>
+          </div>
+          <h5 class="modal-title fw-semibold" id="operatorModalLabel">Add New Operator</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Form Body with clean spacing -->
+      <div class="modal-body px-4 pb-4">
+        <form action="/save_operator" method="post" id="operatorForm">
+          
+          <!-- Department Dropdown -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-building me-1" viewBox="0 0 16 16">
+                <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V1zm11 0H3v14h3v-2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V15h3V1z"/>
+              </svg>
+              Department
+            </label>
+            <select name="deptname" class="form-select border-1 bg-light rounded-3 py-2" required>
+              <option value="">-- Select Department --</option>
+              <option value="Daily Production Reports">Daily Production Reports</option>
+              <option value="Punching Department">Punching Department</option>
+              <option value="Programming Department">Programming Department</option>
+              <option value="Operating Department">Operating Department</option>
+              <option value="Welding Department">Welding Department</option>
+              <option value="Coating & Binding">Coating & Binding</option>
+            </select>
+            <div class="invalid-feedback">Please select a department.</div>
+          </div>
+
+          <!-- Operator Name Input -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-badge me-1" viewBox="0 0 16 16">
+                <path d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                <path d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0h-7zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5v10.795a4.2 4.2 0 0 0-.776-.492C11.392 12.387 10.063 12 8 12s-3.392.387-4.224.803a4.2 4.2 0 0 0-.776.492V2.5z"/>
+              </svg>
+              Operator Name
+            </label>
+            <input type="text" name="oname" class="form-control border-1 bg-light rounded-3 py-2" placeholder="e.g., John Carter" required>
+            <div class="invalid-feedback">Operator name is required.</div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-2">
+            <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-circle me-1" viewBox="0 0 16 16">
+                <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+                <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
+              </svg>
+              Save Operator
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Optional: Add custom responsive touches (no extra CSS needed if using Bootstrap 5) -->
+<style>
+  /* Smooth focus effects */
+  .form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    background-color: #fff;
+  }
+  
+  /* Responsive padding adjustments for mobile */
+  @media (max-width: 576px) {
+    .modal-body {
+      padding: 1rem !important;
+    }
+    .btn {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+  }
+  
+  /* Subtle card hover effect */
+  .modal-content {
+    transition: transform 0.2s ease;
+  }
+  
+  /* Better button spacing on small screens */
+  @media (max-width: 400px) {
+    .d-flex.justify-content-end {
+      flex-direction: column-reverse;
+      gap: 0.5rem !important;
+    }
+    .d-flex.justify-content-end .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<!-- Professional Customer Modal -->
+<div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      
+      <!-- Modern Header with accent -->
+      <div class="modal-header border-0 pt-4 px-4">
+        <div class="d-flex align-items-center gap-2">
+          <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people text-primary" viewBox="0 0 16 16">
+              <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+            </svg>
+          </div>
+          <h5 class="modal-title fw-semibold" id="customerModalLabel">Add New Customer</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Form Body with clean spacing -->
+      <div class="modal-body px-4 pb-4">
+        <form action="/save_customer" method="post" id="customerForm">
+          
+          <!-- Customer Name Input -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-badge me-1" viewBox="0 0 16 16">
+                <path d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                <path d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0h-7zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5v10.795a4.2 4.2 0 0 0-.776-.492C11.392 12.387 10.063 12 8 12s-3.392.387-4.224.803a4.2 4.2 0 0 0-.776.492V2.5z"/>
+              </svg>
+              Customer Name
+            </label>
+            <input type="text" name="cname" class="form-control border-1 bg-light rounded-3 py-2" placeholder="e.g., ABC Corporation" required>
+            <div class="invalid-feedback">Customer name is required.</div>
+          </div>
+
+          <!-- Optional: Additional fields can be added here -->
+          <!-- Example: Customer Email, Phone, etc. -->
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-2">
+            <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-circle me-1" viewBox="0 0 16 16">
+                <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+                <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
+              </svg>
+              Save Customer
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Optional: Enhanced styling for better UX -->
+<style>
+  /* Smooth focus effects */
+  .form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    background-color: #fff;
+  }
+  
+  /* Responsive padding adjustments for mobile */
+  @media (max-width: 576px) {
+    .modal-body {
+      padding: 1rem !important;
+    }
+    .btn {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+  }
+  
+  /* Subtle modal animation and hover effect */
+  .modal-content {
+    transition: transform 0.2s ease;
+  }
+  
+  /* Better button stacking on very small screens */
+  @media (max-width: 400px) {
+    .d-flex.justify-content-end {
+      flex-direction: column-reverse;
+      gap: 0.5rem !important;
+    }
+    .d-flex.justify-content-end .btn {
+      width: 100%;
+    }
+  }
+  
+  /* Optional: Add a subtle gradient background to header */
+  .modal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  }
+</style>
+
+<!-- Professional Project Modal -->
+<div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      
+      <!-- Modern Header with accent -->
+      <div class="modal-header border-0 pt-4 px-4">
+        <div class="d-flex align-items-center gap-2">
+          <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-briefcase text-primary" viewBox="0 0 16 16">
+              <path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.5 6.5v-1h2v1h-2zM11 8h2v1h-2V8zM6 8h2v1H6V8zM3 8h2v1H3V8zm-2 1h2v1H1V9zm0 2h14v1H1v-1zm13-3h-2v1h2V8zM3 10h2v1H3v-1zm8 0h2v1h-2v-1z"/>
+            </svg>
+          </div>
+          <h5 class="modal-title fw-semibold" id="projectModalLabel">Add New Project</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Form Body with clean spacing -->
+      <div class="modal-body px-4 pb-4">
+        <form action="/save_project" method="post" id="projectForm">
+          
+          <!-- Customer Dropdown -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-building me-1" viewBox="0 0 16 16">
+                <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V1zm11 0H3v14h3v-2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V15h3V1z"/>
+              </svg>
+              Customer Name
+            </label>
+            <select name="cuname" class="form-select border-1 bg-light rounded-3 py-2" required>
+              <option value="">-- Select Customer --</option>
+              <% for(let i = 0; i < customer.length; i++){ %>
+                <option value="<%= customer[i].cname %>">
+                  <%= customer[i].cname %>
+                </option>
+              <% } %>
+            </select>
+            <div class="invalid-feedback">Please select a customer.</div>
+          </div>
+
+          <!-- Project Name Input -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-diagram-3 me-1" viewBox="0 0 16 16">
+                <path d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6h-1A1.5 1.5 0 0 1 6 4.5v-1zM7.5 3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1z"/>
+                <path d="M4 9.5A1.5 1.5 0 0 1 5.5 8h1A1.5 1.5 0 0 1 8 9.5v1A1.5 1.5 0 0 1 6.5 12h-1A1.5 1.5 0 0 1 4 10.5v-1zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1z"/>
+                <path d="M12 9.5A1.5 1.5 0 0 1 13.5 8h1A1.5 1.5 0 0 1 16 9.5v1a1.5 1.5 0 0 1-1.5 1.5h-1A1.5 1.5 0 0 1 12 10.5v-1zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1z"/>
+                <path d="M7.5 6.5a.5.5 0 0 1 .5.5v1.5h1a.5.5 0 0 1 0 1H7v-2.5a.5.5 0 0 1 .5-.5z"/>
+                <path d="M6 11.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
+              </svg>
+              Project Name
+            </label>
+            <input type="text" name="pname" class="form-control border-1 bg-light rounded-3 py-2" placeholder="Enter Project Name" required>
+            <div class="invalid-feedback">Project name is required.</div>
+          </div>
+
+          <!-- Optional: Additional Project Fields -->
+          <!-- Uncomment to add more project details
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-calendar me-1" viewBox="0 0 16 16">
+                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2z"/>
+                <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+              </svg>
+              Start Date
+            </label>
+            <input type="date" name="start_date" class="form-control border-1 bg-light rounded-3 py-2">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-calendar-check me-1" viewBox="0 0 16 16">
+                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2z"/>
+                <path d="M10.854 7.854a.5.5 0 0 0-.708-.708L7.5 9.793 6.354 8.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l3-3z"/>
+              </svg>
+              End Date
+            </label>
+            <input type="date" name="end_date" class="form-control border-1 bg-light rounded-3 py-2">
+          </div>
+          -->
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-2">
+            <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle me-1" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+              </svg>
+              Create Project
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Styling for Professional Look -->
+<style>
+  /* Smooth focus effects */
+  .form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    background-color: #fff;
+  }
+  
+  /* Responsive padding adjustments for mobile */
+  @media (max-width: 576px) {
+    .modal-body {
+      padding: 1rem !important;
+    }
+    .btn {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+  }
+  
+  /* Subtle modal animation */
+  .modal-content {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  
+  /* Better button stacking on very small screens */
+  @media (max-width: 400px) {
+    .d-flex.justify-content-end {
+      flex-direction: column-reverse;
+      gap: 0.5rem !important;
+    }
+    .d-flex.justify-content-end .btn {
+      width: 100%;
+    }
+  }
+  
+  /* Optional: Add a subtle gradient background to header */
+  .modal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  /* Enhanced select dropdown styling */
+  .form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+  }
+  
+  /* Loading state for select (optional) */
+  .form-select:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  .btn, .form-control, .form-select {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Hover effect for buttons */
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+  }
+  
+  .btn-outline-secondary:hover {
+    transform: translateY(-1px);
+  }
+</style>
+
+<!-- Optional JavaScript for dynamic customer loading -->
+<script>
+  // If you need to dynamically load customers via AJAX, use this pattern
+  // document.addEventListener('DOMContentLoaded', function() {
+  //   const customerSelect = document.querySelector('#projectModal select[name="cuname"]');
+  //   
+  //   // Function to load customers dynamically
+  //   async function loadCustomers() {
+  //     try {
+  //       const response = await fetch('/api/customers');
+  //       const customers = await response.json();
+  //       
+  //       customerSelect.innerHTML = '<option value="">-- Select Customer --</option>';
+  //       customers.forEach(customer => {
+  //         const option = document.createElement('option');
+  //         option.value = customer.cname;
+  //         option.textContent = customer.cname;
+  //         customerSelect.appendChild(option);
+  //       });
+  //     } catch (error) {
+  //       console.error('Error loading customers:', error);
+  //     }
+  //   }
+  //   
+  //   // Load customers when modal opens
+  //   $('#projectModal').on('show.bs.modal', function() {
+  //     loadCustomers();
+  //   });
+  // });
+</script>
+
+<!-- Professional Material Modal -->
+<div class="modal fade" id="materialModal" tabindex="-1" aria-labelledby="materialModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      
+      <!-- Modern Header with accent -->
+      <div class="modal-header border-0 pt-4 px-4">
+        <div class="d-flex align-items-center gap-2">
+          <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cube text-primary" viewBox="0 0 16 16">
+              <path d="M8 1.5c-.263 0-.52.068-.75.192L2.25 4.692A1.5 1.5 0 0 0 1.5 6v4c0 .263.068.52.192.75l4.5 2.25c.23.115.487.192.75.192h2c.263 0 .52-.068.75-.192l4.5-2.25c.124-.23.192-.487.192-.75V6c0-.263-.068-.52-.192-.75L8.75 1.692A1.5 1.5 0 0 0 8 1.5zm0 1.193L13 5.2l-3 1.5-5-2.5 3-1.007zM2.5 6.5L7 8.693v4.807L2.5 11V6.5zM9 13.5v-4.807L13.5 6.5V11L9 13.5z"/>
+            </svg>
+          </div>
+          <h5 class="modal-title fw-semibold" id="materialModalLabel">Add New Material</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Form Body with clean spacing -->
+      <div class="modal-body px-4 pb-4">
+        <form action="/save_material" method="post" id="materialForm">
+          
+          <!-- Material Name Input -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-box-seam me-1" viewBox="0 0 16 16">
+                <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+              </svg>
+              Material Name
+            </label>
+            <input type="text" name="mname" class="form-control border-1 bg-light rounded-3 py-2" placeholder="e.g., Stainless Steel Sheet 2mm" required>
+            <div class="invalid-feedback">Material name is required.</div>
+          </div>
+
+          <!-- Optional: Additional Material Fields -->
+          <!-- Uncomment to add more material details
+          
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-tag me-1" viewBox="0 0 16 16">
+                <path d="M2 1a1 1 0 0 0-1 1v4.586a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l4.586-4.586a1 1 0 0 0 0-1.414l-7-7A1 1 0 0 0 6.586 1H2zm.5 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+              </svg>
+              Material Type
+            </label>
+            <select name="mtype" class="form-select border-1 bg-light rounded-3 py-2">
+              <option value="">-- Select Type --</option>
+              <option value="Raw Material">Raw Material</option>
+              <option value="Finished Good">Finished Good</option>
+              <option value="Packaging">Packaging</option>
+              <option value="Consumable">Consumable</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-grid-3x3-gap me-1" viewBox="0 0 16 16">
+                <path d="M4 2v2H2V2h2zm1 0v2h2V2H5zm3 0v2h2V2H8zm3 0v2h2V2h-2zm-6 3v2H2V5h2zm3 0v2H5V5h2zm3 0v2H8V5h2zm3 0v2h-2V5h2zM4 8v2H2V8h2zm3 0v2H5V8h2zm3 0v2H8V8h2zm3 0v2h-2V8h2zM2 11h2v2H2v-2zm3 0h2v2H5v-2zm3 0h2v2H8v-2zm3 0h2v2h-2v-2z"/>
+              </svg>
+              Unit of Measurement
+            </label>
+            <select name="unit" class="form-select border-1 bg-light rounded-3 py-2">
+              <option value="">-- Select Unit --</option>
+              <option value="kg">Kilogram (kg)</option>
+              <option value="g">Gram (g)</option>
+              <option value="m">Meter (m)</option>
+              <option value="cm">Centimeter (cm)</option>
+              <option value="pcs">Pieces (pcs)</option>
+              <option value="roll">Roll</option>
+              <option value="sheet">Sheet</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-currency-dollar me-1" viewBox="0 0 16 16">
+                <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.591-3.695c-1.174-.314-1.674-.827-1.674-1.575 0-.73.56-1.383 1.674-1.613v3.188zm2.087 3.285c.756.204 1.174.69 1.174 1.421 0 .814-.539 1.467-1.174 1.665v-3.086z"/>
+              </svg>
+              Unit Price
+            </label>
+            <input type="number" name="unit_price" class="form-control border-1 bg-light rounded-3 py-2" placeholder="0.00" step="0.01">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-pencil me-1" viewBox="0 0 16 16">
+                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5L13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175l-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+              </svg>
+              Description (Optional)
+            </label>
+            <textarea name="description" class="form-control border-1 bg-light rounded-3 py-2" rows="3" placeholder="Additional details about the material..."></textarea>
+          </div>
+          -->
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-2">
+            <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle me-1" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+              </svg>
+              Add Material
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Styling for Professional Look -->
+<style>
+  /* Smooth focus effects */
+  .form-control:focus, .form-select:focus, textarea:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    background-color: #fff;
+  }
+  
+  /* Responsive padding adjustments for mobile */
+  @media (max-width: 576px) {
+    .modal-body {
+      padding: 1rem !important;
+    }
+    .btn {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+  }
+  
+  /* Subtle modal animation */
+  .modal-content {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  
+  /* Better button stacking on very small screens */
+  @media (max-width: 400px) {
+    .d-flex.justify-content-end {
+      flex-direction: column-reverse;
+      gap: 0.5rem !important;
+    }
+    .d-flex.justify-content-end .btn {
+      width: 100%;
+    }
+  }
+  
+  /* Optional: Add a subtle gradient background to header */
+  .modal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  /* Enhanced select dropdown styling */
+  .form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  .btn, .form-control, .form-select, textarea {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Hover effect for buttons */
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+  }
+  
+  .btn-outline-secondary:hover {
+    transform: translateY(-1px);
+  }
+  
+  /* Textarea resize handle styling */
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  
+  /* Optional: Loading state for submit button */
+  .btn-primary:disabled {
+    transform: none;
+    opacity: 0.65;
+  }
+</style>
+
+<!-- Optional JavaScript for form validation -->
+<script>
+  // Client-side form validation before submission
+  document.addEventListener('DOMContentLoaded', function() {
+    const materialForm = document.querySelector('#materialForm');
+    
+    if (materialForm) {
+      materialForm.addEventListener('submit', function(event) {
+        const materialName = document.querySelector('input[name="mname"]');
+        
+        // Basic validation
+        if (!materialName.value.trim()) {
+          event.preventDefault();
+          materialName.classList.add('is-invalid');
+          materialName.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return false;
+        } else {
+          materialName.classList.remove('is-invalid');
+        }
+        
+        // Optional: Check for duplicate material names (you would need an API endpoint)
+        // You can uncomment and implement this if needed
+        /*
+        fetch('/check_material_exists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mname: materialName.value.trim() })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.exists) {
+            event.preventDefault();
+            materialName.classList.add('is-invalid');
+            materialName.setCustomValidity('Material already exists');
+            // Show custom error message
+          }
+        });
+        */
+      });
+      
+      // Clear validation on input
+      document.querySelector('input[name="mname"]').addEventListener('input', function() {
+        this.classList.remove('is-invalid');
+        this.setCustomValidity('');
+      });
+    }
+  });
+  
+  // Optional: Reset form when modal is closed
+  $('#materialModal').on('hidden.bs.modal', function () {
+    const form = document.querySelector('#materialForm');
+    if (form) {
+      form.reset();
+      form.querySelectorAll('.is-invalid').forEach(el => {
+        el.classList.remove('is-invalid');
+      });
+    }
+  });
+</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Density mapping (g/cm³)
+    const materialDensity = {
+      "MS": 7.85,
+      "ALUMINIUM": 2.70,
+      "SS": 7.93,
+      "GI": 7.85,
+      "HRPO": 7.85,
+      "PERFORATED": 7.85
+    };
+
+    // Material density-based weight calculation
+    function calculateWeight() {
+      let L = parseFloat(document.getElementById('length').value) || 0;
+      let W = parseFloat(document.getElementById('width').value) || 0;
+      let T = parseFloat(document.getElementById('thickness').value) || 0;
+      let Q = parseFloat(document.getElementById('qty').value) || 0;
+      let selectedMaterial = document.getElementById('materialSelect').value;
+      let density = materialDensity[selectedMaterial] || 7.85;
+      let weight = (L * W * T * Q * density) / 1000000;
+      if (isNaN(weight) || weight <= 0) weight = 0;
+      document.getElementById('totalWeight').value = weight.toFixed(3) + " Kg";
+    }
+
+    // Process time calculation (HH:MM) from start & end times
+    function calculateProcessTime() {
+      const start = document.getElementById('startTime').value;
+      const end = document.getElementById('endTime').value;
+      if (!start || !end) {
+        document.getElementById('processTimeDisplay').value = '';
+        document.getElementById('processTimeHidden').value = '';
+        return;
+      }
+      const [startHour, startMin] = start.split(':').map(Number);
+      const [endHour, endMin] = end.split(':').map(Number);
+      let startTotal = startHour * 60 + startMin;
+      let endTotal = endHour * 60 + endMin;
+      let diffMinutes = endTotal - startTotal;
+      if (diffMinutes < 0) diffMinutes += 24 * 60;
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      const formatted = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}`;
+      document.getElementById('processTimeDisplay').value = formatted;
+      document.getElementById('processTimeHidden').value = formatted;
+    }
+
+    // Dynamic project loading based on selected customer
+    document.getElementById("customerSelect").addEventListener("change", async function () {
+      let customer = this.value;
+      let projectSelect = document.getElementById("projectSelect");
+
+      if (!customer) {
+        projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
+        return;
+      }
+
+      projectSelect.innerHTML = '<option value="">Loading...</option>';
+
+      try {
+        let response = await fetch(`/get_projects/${customer}`);
+        let projects = await response.json();
+        projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
+        projects.forEach(project => {
+          projectSelect.innerHTML += `<option value="${project.pname}">${project.pname}</option>`;
+        });
+      } catch(e) {
+        projectSelect.innerHTML = '<option value="">-- Error loading projects --</option>';
+      }
+    });
+
+    // Other reason logic (fixed: using "Other/Unclassified" value)
+    const mureasonSelect = document.getElementById('mureasonSelect');
+    const otherReasonDiv = document.getElementById('otherReasonDiv');
+    const otherReasonInput = document.getElementById('otherReasonInput');
+    
+    if (mureasonSelect) {
+      mureasonSelect.addEventListener('change', function() {
+        if (mureasonSelect.value === 'Other/Unclassified') { 
+          otherReasonDiv.style.display = 'block'; 
+          otherReasonInput.required = true; 
+        } else { 
+          otherReasonDiv.style.display = 'none'; 
+          otherReasonInput.required = false; 
+          otherReasonInput.value = ''; 
+        }
+      });
+    }
+
+    // Event listeners for weight and time calculations
+    document.getElementById('materialSelect').addEventListener('change', calculateWeight);
+    document.querySelectorAll('.calculate').forEach(el => el.addEventListener('input', calculateWeight));
+    document.getElementById('startTime').addEventListener('input', calculateProcessTime);
+    document.getElementById('endTime').addEventListener('input', calculateProcessTime);
+
+    // Form submission confirmation with proper validation
+    window.confirmSubmit = function() {
+      if (!document.querySelector('input[name="p_date"]')?.value) { alert("Please select Timestamp."); return false; }
+      if (!document.getElementById('customerSelect').value) { alert("Please select Customer."); return false; }
+      if (!document.getElementById('projectSelect').value) { alert("Please select Project."); return false; }
+      if (!document.getElementById('materialSelect').value) { alert("Please select Material."); return false; }
+      if (mureasonSelect && mureasonSelect.value === 'Other/Unclassified' && (!otherReasonInput.value.trim())) { 
+        alert("Please specify the reason for 'Other/Unclassified'."); 
+        return false; 
+      }
+      if (mureasonSelect && mureasonSelect.value === 'Other/Unclassified') {
+        let hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'other_gmr';
+        hidden.value = otherReasonInput.value.trim();
+        const existingHidden = document.querySelector('input[name="other_gmr"]');
+        if (existingHidden) existingHidden.remove();
+        document.getElementById('productionForm').appendChild(hidden);
+      }
+      return confirm("✅ Save this production record?");
+    };
+
+    // Enhanced Reset button handler
+    const resetBtn = document.querySelector('button[type="reset"]');
+    const dateInput = document.querySelector('input[name="p_date"]');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function(e) {
+        setTimeout(() => {
+          if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+          calculateWeight();
+          calculateProcessTime();
+          if (mureasonSelect) {
+            mureasonSelect.value = '';
+            otherReasonDiv.style.display = 'none';
+            otherReasonInput.value = '';
+            if (mureasonSelect.disabled) mureasonSelect.disabled = false;
+            const hiddenClone = document.querySelector('input[name="other_gmr"]');
+            if (hiddenClone) hiddenClone.remove();
+          }
+          const startTimeElem = document.getElementById('startTime');
+          const endTimeElem = document.getElementById('endTime');
+          if (startTimeElem) startTimeElem.value = '';
+          if (endTimeElem) endTimeElem.value = '';
+          document.getElementById('processTimeDisplay').value = '';
+          document.getElementById('processTimeHidden').value = '';
+        }, 20);
+      });
+    }
+
+    // Set default date to today if empty
+    if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+    
+    // Initial calculations
+    calculateWeight();
+    calculateProcessTime();
+    
+    // Ensure other reason visibility on page load (if pre-selected)
+    if (mureasonSelect && mureasonSelect.value === 'Other/Unclassified') {
+      otherReasonDiv.style.display = 'block';
+    }
+    
+    console.log("Production entry system ready — weight & process time auto-calculated.");
+  </script>
+</body>
+</html>
