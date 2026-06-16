@@ -14,21 +14,39 @@ app.use(express.json());
 // EJS Setup
 app.set("view engine", "ejs");
 
-// Session configuration (secure)
+// Session configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,          // Changed from true to avoid unnecessary writes
+    secret: process.env.SESSION_SECRET || 'fallback-secret-change-me',
+    resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Set to true if using HTTPS
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
-// PostgreSQL connection pool (SSL properly enabled)
+// PostgreSQL connection pool
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
 });
 
-// Helper function to convert MySQL ? placeholders to PostgreSQL $1, $2, ...
+// Test database connection
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('❌ Database connection error:', err.message);
+        process.exit(1);
+    } else {
+        console.log('✅ Database connected successfully');
+        release();
+    }
+});
+
+// Helper function for queries
 const exe = async (sql, params = []) => {
     let paramCounter = 0;
     const pgSql = sql.replace(/\?/g, () => `$${++paramCounter}`);
@@ -37,9 +55,20 @@ const exe = async (sql, params = []) => {
         return result.rows;
     } catch (err) {
         console.error("Database error:", err.message);
-        throw new Error("Database operation failed");
+        console.error("SQL Query:", pgSql);
+        console.error("Parameters:", params);
+        throw new Error(`Database operation failed: ${err.message}`);
     }
 };
+
+// Authentication middleware
+function check_user_login(req, res, next) {
+    if (req.session && req.session.oname) {
+        return next();
+    }
+    req.session.returnTo = req.originalUrl;
+    res.redirect("/deptlogindashboard");
+}
 
 // ---------- Routes ----------
 
@@ -51,7 +80,7 @@ app.get("/deptlogindashboard", (req, res) => {
     res.render("deptlogindashboard.ejs");
 });
 
-// ---------- USER LOGIN (with bcrypt) ----------
+// ---------- USER LOGIN ----------
 app.post("/checkauthuser", async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -69,9 +98,9 @@ app.post("/checkauthuser", async (req, res) => {
 
         console.log("User login attempt:", username);
 
-        // Fetch user by username
-        const sql = `SELECT * FROM operator WHERE username = $1 AND psssword = $1`;
-        const result = await exe(sql, [username,password]);
+        // FIXED: Correct SQL query - only fetch by username, not password
+        const sql = `SELECT * FROM operator WHERE username = $1`;
+        const result = await exe(sql, [username]);
 
         if (result.length > 0) {
             const user = result[0];
@@ -82,7 +111,7 @@ app.post("/checkauthuser", async (req, res) => {
             if (match) {
                 console.log("User login successful:", username);
                 
-                // Store user info in session (excluding sensitive data)
+                // Store user info in session
                 req.session.oname = {
                     oid: user.oid,
                     oname: user.oname,
@@ -95,8 +124,6 @@ app.post("/checkauthuser", async (req, res) => {
 
                 // Redirect based on department and role
                 const { deptname, role } = user;
-                
-                // Use a switch statement for cleaner code
                 const redirectMap = {
                     'Laser Department_user': '/laserproductionreport',
                     'Laser Department_admin': '/adminlasetdashboard',
@@ -109,13 +136,12 @@ app.post("/checkauthuser", async (req, res) => {
                     return res.redirect(redirectPath);
                 }
                 
-                // Fallback for unknown department/role combinations
                 console.warn(`Unknown department/role combination: ${deptname}/${role}`);
                 return res.redirect("/deptlogindashboard");
             }
         }
         
-        // Invalid credentials - use a generic message for security
+        // Invalid credentials
         console.log("User login failed:", username);
         return res.status(401).send(`
             <script>
@@ -140,40 +166,60 @@ app.get("/logoutuser", check_user_login, async (req, res) => {
     req.session.destroy(err => {
         if (err) {
             console.error("Error destroying session:", err);
-            return res.status(500).send("Logout failed");
+            return res.status(500).send(`
+                <script>
+                    alert('Error during logout');
+                    window.location.href = '/deptlogindashboard';
+                </script>
+            `);
         }
         res.redirect("/deptlogindashboard");
     });
 });
 
-function check_user_login(req, res, next) {
-    if (req.session.oname) return next();
-    res.redirect("/deptlogindashboard");
-}
-
 // ---------- LASER DEPARTMENT ROUTES ----------
 app.get("/adminlasetdashboard", check_user_login, async (req, res) => {
-    let d = req.session.oname.oname;
-    let records = await exe("SELECT * FROM laserdept ORDER BY g_id DESC");
-    let customer = await exe("SELECT * FROM customers");
-    let material = await exe("SELECT * FROM material");
-    let project = await exe("SELECT * FROM project");
-    res.render("adminlasetdashboard.ejs", { records, d, customer, material, project });
+    try {
+        let d = req.session.oname.oname;
+        let [records, customer, material, project] = await Promise.all([
+            exe("SELECT * FROM laserdept ORDER BY g_id DESC"),
+            exe("SELECT * FROM customers"),
+            exe("SELECT * FROM material"),
+            exe("SELECT * FROM project")
+        ]);
+        res.render("adminlasetdashboard.ejs", { records, d, customer, material, project });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading dashboard");
+    }
 });
 
 app.get("/laserproductionreport", check_user_login, async (req, res) => {
-    let onamee = req.session.oname.oname;
-    let customer = await exe("SELECT * FROM customers");
-    let operator = await exe("SELECT * FROM operator WHERE deptname = $1 AND oname = $2", ["Laser Department", onamee]);
-    let material = await exe("SELECT * FROM material");
-    let project = await exe("SELECT * FROM project");
-    res.render("laserproductionreport.ejs", { customer, operator, material, project });
+    try {
+        let onamee = req.session.oname.oname;
+        let [customer, operator, material, project] = await Promise.all([
+            exe("SELECT * FROM customers"),
+            exe("SELECT * FROM operator WHERE deptname = $1 AND oname = $2", ["Laser Department", onamee]),
+            exe("SELECT * FROM material"),
+            exe("SELECT * FROM project")
+        ]);
+        res.render("laserproductionreport.ejs", { customer, operator, material, project });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading page");
+    }
 });
 
-app.get("/get_projects/:customer", async (req, res) => {
-    let customer = req.params.customer;
-    let projects = await exe("SELECT * FROM project WHERE cuname = $1", [customer]);
-    res.json(projects);
+// FIXED: Added check_user_login middleware
+app.get("/get_projects/:customer", check_user_login, async (req, res) => {
+    try {
+        let customer = req.params.customer;
+        let projects = await exe("SELECT * FROM project WHERE cuname = $1", [customer]);
+        res.json(projects);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch projects" });
+    }
 });
 
 app.post("/save_details", check_user_login, async (req, res) => {
@@ -192,67 +238,98 @@ app.post("/save_details", check_user_login, async (req, res) => {
         await exe(sql, [
             d.g_date, d.g_operator_name, d.g_shift, d.g_customer, d.g_project_name,
             d.g_set_name, d.g_material, d.g_sheetqty, d.g_length, d.g_width, d.g_thickness,
-            d.g_totalweight, d.g_start_time, d.g_end_time, d.g_process_time, d.g_m_processtime,
-            d.g_mureason, d.other_gmr, d.g_mjustification, d.g_rejectionqty
+            d.g_totalweight, d.g_start_time, d.g_end_time, d.g_process_time || d.g_time, // FIXED: Handle both field names
+            d.g_m_processtime, d.g_mureason, d.other_gmr, d.g_mjustification, d.g_rejectionqty
         ]);
 
-        if (req.session.oname.role === "admin") res.redirect("/adminlasetdashboard");
-        else res.redirect("/laserproductionreport");
+        const redirectUrl = req.session.oname.role === "admin" 
+            ? "/adminlasetdashboard" 
+            : "/laserproductionreport";
+        res.redirect(redirectUrl);
     } catch (err) {
         console.error(err);
-        res.send(`<script>alert('Error Saving Record'); window.history.back();</script>`);
+        res.send(`<script>alert('Error Saving Record: ${err.message}'); window.history.back();</script>`);
     }
 });
 
 app.get("/laserproductionrecord", check_user_login, async (req, res) => {
-    let onamee = req.session.oname.oname;
-    let records = await exe("SELECT * FROM laserdept WHERE g_operator_name = $1 ORDER BY g_id DESC", [onamee]);
-    res.render("laserproductionrecord.ejs", { records });
+    try {
+        let onamee = req.session.oname.oname;
+        let records = await exe("SELECT * FROM laserdept WHERE g_operator_name = $1 ORDER BY g_id DESC", [onamee]);
+        res.render("laserproductionrecord.ejs", { records });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading records");
+    }
 });
 
 app.get("/laserproductionedit/:id", check_user_login, async (req, res) => {
-    let id = req.params.id;
-    let orole = req.session.oname.role;
-    let data = await exe("SELECT * FROM laserdept WHERE g_id = $1", [id]);
-    let customer = await exe("SELECT * FROM customers");
-    res.render("laserproductionedit.ejs", { data: data[0], customer, orole });
+    try {
+        let id = req.params.id;
+        let orole = req.session.oname.role;
+        let [data, customer] = await Promise.all([
+            exe("SELECT * FROM laserdept WHERE g_id = $1", [id]),
+            exe("SELECT * FROM customers")
+        ]);
+        if (!data || data.length === 0) {
+            return res.status(404).send("Record not found");
+        }
+        res.render("laserproductionedit.ejs", { data: data[0], customer, orole });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading edit page");
+    }
 });
 
 app.post("/update_details", check_user_login, async (req, res) => {
-    let d = req.body;
-    await exe(`
-        UPDATE laserdept SET
-            g_operator_name=$1, g_shift=$2, g_customer=$3, g_project_name=$4,
-            g_set_name=$5, g_material=$6, g_sheetqty=$7, g_length=$8, g_width=$9,
-            g_thickness=$10, g_totalweight=$11, g_start_time=$12, g_end_time=$13,
-            g_time=$14, g_m_processtime=$15, g_mureason=$16, other_gmr=$17,
-            g_mjustification=$18, g_rejectionqty=$19
-        WHERE g_id=$20
-    `, [
-        d.g_operator_name, d.g_shift, d.g_customer, d.g_project_name, d.g_set_name,
-        d.g_material, d.g_sheetqty, d.g_length, d.g_width, d.g_thickness, d.g_totalweight,
-        d.g_start_time, d.g_end_time, d.g_process_time, d.g_m_processtime, d.g_mureason,
-        d.other_gmr, d.g_mjustification, d.g_rejectionqty, d.g_id
-    ]);
-    if (req.session.oname.role === "admin") res.redirect("/adminlasetdashboard");
-    else res.redirect("/laserproductionrecord");
+    try {
+        let d = req.body;
+        await exe(`
+            UPDATE laserdept SET
+                g_operator_name=$1, g_shift=$2, g_customer=$3, g_project_name=$4,
+                g_set_name=$5, g_material=$6, g_sheetqty=$7, g_length=$8, g_width=$9,
+                g_thickness=$10, g_totalweight=$11, g_start_time=$12, g_end_time=$13,
+                g_time=$14, g_m_processtime=$15, g_mureason=$16, other_gmr=$17,
+                g_mjustification=$18, g_rejectionqty=$19
+            WHERE g_id=$20
+        `, [
+            d.g_operator_name, d.g_shift, d.g_customer, d.g_project_name, d.g_set_name,
+            d.g_material, d.g_sheetqty, d.g_length, d.g_width, d.g_thickness, d.g_totalweight,
+            d.g_start_time, d.g_end_time, d.g_process_time || d.g_time, // FIXED: Handle both field names
+            d.g_m_processtime, d.g_mureason, d.other_gmr, d.g_mjustification, d.g_rejectionqty, d.g_id
+        ]);
+        
+        const redirectUrl = req.session.oname.role === "admin" 
+            ? "/adminlasetdashboard" 
+            : "/laserproductionrecord";
+        res.redirect(redirectUrl);
+    } catch (err) {
+        console.error(err);
+        res.send(`<script>alert('Error Updating Record: ${err.message}'); window.history.back();</script>`);
+    }
 });
 
 app.get("/delete/:id", check_user_login, async (req, res) => {
-    let id = req.params.id;
-    await exe("DELETE FROM laserdept WHERE g_id=$1", [id]);
-    if (req.session.oname.role === "admin") res.redirect("/adminlasetdashboard");
-    else res.redirect("/laserproductionrecord");
+    try {
+        let id = req.params.id;
+        await exe("DELETE FROM laserdept WHERE g_id=$1", [id]);
+        const redirectUrl = req.session.oname.role === "admin" 
+            ? "/adminlasetdashboard" 
+            : "/laserproductionrecord";
+        res.redirect(redirectUrl);
+    } catch (err) {
+        console.error(err);
+        res.send(`<script>alert('Error Deleting Record: ${err.message}'); window.history.back();</script>`);
+    }
 });
 
-// ---------- MASTER DATA ROUTES (with bcrypt for operator password) ----------
+// ---------- MASTER DATA ROUTES ----------
 app.post("/save_operator", check_user_login, async (req, res) => {
     try {
         let d = req.body;
-        // Hash the password before storing
         const hashedPassword = await bcrypt.hash(d.password, 10);
-        let sql = `INSERT INTO operator (deptname, oname, username, password, role) VALUES ($1, $2, $3, $4, $5)`;
-        await exe(sql, [d.deptname, d.oname, d.username, hashedPassword, d.role]);
+        await exe("INSERT INTO operator (deptname, oname, username, password, role) VALUES ($1, $2, $3, $4, $5)", 
+            [d.deptname, d.oname, d.username, hashedPassword, d.role]);
 
         const redirectUrl = (req.session.oname.deptname === "Laser Department" && req.session.oname.role === "admin")
             ? "/adminlasetdashboard"
@@ -260,7 +337,7 @@ app.post("/save_operator", check_user_login, async (req, res) => {
         res.send(`<script>alert('Record Saved Successfully'); window.location='${redirectUrl}';</script>`);
     } catch (err) {
         console.error(err);
-        res.send(`<script>alert('Error Saving Record'); window.history.back();</script>`);
+        res.send(`<script>alert('Error Saving Record: ${err.message}'); window.history.back();</script>`);
     }
 });
 
@@ -274,7 +351,7 @@ app.post("/save_customer", check_user_login, async (req, res) => {
         res.send(`<script>alert('Record Saved Successfully'); window.location='${redirectUrl}';</script>`);
     } catch (err) {
         console.error(err);
-        res.send(`<script>alert('Error Saving Record'); window.history.back();</script>`);
+        res.send(`<script>alert('Error Saving Record: ${err.message}'); window.history.back();</script>`);
     }
 });
 
@@ -288,7 +365,7 @@ app.post("/save_project", check_user_login, async (req, res) => {
         res.send(`<script>alert('Record Saved Successfully'); window.location='${redirectUrl}';</script>`);
     } catch (err) {
         console.error(err);
-        res.send(`<script>alert('Error Saving Record'); window.history.back();</script>`);
+        res.send(`<script>alert('Error Saving Record: ${err.message}'); window.history.back();</script>`);
     }
 });
 
@@ -302,18 +379,25 @@ app.post("/save_material", check_user_login, async (req, res) => {
         res.send(`<script>alert('Record Saved Successfully'); window.location='${redirectUrl}';</script>`);
     } catch (err) {
         console.error(err);
-        res.send(`<script>alert('Error Saving Record'); window.history.back();</script>`);
+        res.send(`<script>alert('Error Saving Record: ${err.message}'); window.history.back();</script>`);
     }
 });
 
 // ---------- PUNCHING DEPARTMENT ROUTES ----------
 app.get("/punchingreport", check_user_login, async (req, res) => {
-    let onamee = req.session.oname.oname;
-    let customer = await exe("SELECT * FROM customers");
-    let operator = await exe("SELECT * FROM operator WHERE deptname = $1 AND oname = $2", ["Punching Department", onamee]);
-    let material = await exe("SELECT * FROM material");
-    let project = await exe("SELECT * FROM project");
-    res.render("punchingreport.ejs", { customer, operator, material, project });
+    try {
+        let onamee = req.session.oname.oname;
+        let [customer, operator, material, project] = await Promise.all([
+            exe("SELECT * FROM customers"),
+            exe("SELECT * FROM operator WHERE deptname = $1 AND oname = $2", ["Punching Department", onamee]),
+            exe("SELECT * FROM material"),
+            exe("SELECT * FROM project")
+        ]);
+        res.render("punchingreport.ejs", { customer, operator, material, project });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading page");
+    }
 });
 
 app.post("/save_punchiing_details", check_user_login, async (req, res) => {
@@ -331,74 +415,120 @@ app.post("/save_punchiing_details", check_user_login, async (req, res) => {
             d.p_date, d.p_operator_name, d.p_shift, d.p_machine, d.p_customer,
             d.p_project_name, d.p_set_name, d.p_material, d.p_sheetqty, d.p_length,
             d.p_width, d.p_thickness, d.p_totalweight, d.p_start_time, d.p_end_time,
-            d.p_process_time, d.p_m_processtime, d.p_mureason, d.other_gmr, d.p_mjustification, d.p_rejectionqty
+            d.p_process_time || d.p_time, // FIXED: Handle both field names
+            d.p_m_processtime, d.p_mureason, d.other_gmr, d.p_mjustification, d.p_rejectionqty
         ]);
-        if (req.session.oname.role === "admin") res.redirect("/admin_punching_dashboard");
-        else res.redirect("/punchingreport");
+        
+        const redirectUrl = req.session.oname.role === "admin" 
+            ? "/admin_punching_dashboard" 
+            : "/punchingreport";
+        res.redirect(redirectUrl);
     } catch (err) {
         console.error(err);
-        res.send(`<script>alert('Error Saving Record'); window.history.back();</script>`);
+        res.send(`<script>alert('Error Saving Record: ${err.message}'); window.history.back();</script>`);
     }
 });
 
 app.get("/punchingproductionrecord", check_user_login, async (req, res) => {
-    let onamee = req.session.oname.oname;
-    let records = await exe("SELECT * FROM punchingdept WHERE p_operator_name = $1 ORDER BY p_id DESC", [onamee]);
-    res.render("punchingproductionrecord.ejs", { records });
+    try {
+        let onamee = req.session.oname.oname;
+        let records = await exe("SELECT * FROM punchingdept WHERE p_operator_name = $1 ORDER BY p_id DESC", [onamee]);
+        res.render("punchingproductionrecord.ejs", { records });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading records");
+    }
 });
 
 app.get("/punchingproductionedit/:id", check_user_login, async (req, res) => {
-    let id = req.params.id;
-    let orole = req.session.oname.role;
-    let data = await exe("SELECT * FROM punchingdept WHERE p_id = $1", [id]);
-    let customer = await exe("SELECT * FROM customers");
-    res.render("punchingproductionedit.ejs", { data: data[0], customer, orole });
+    try {
+        let id = req.params.id;
+        let orole = req.session.oname.role;
+        let [data, customer] = await Promise.all([
+            exe("SELECT * FROM punchingdept WHERE p_id = $1", [id]),
+            exe("SELECT * FROM customers")
+        ]);
+        if (!data || data.length === 0) {
+            return res.status(404).send("Record not found");
+        }
+        res.render("punchingproductionedit.ejs", { data: data[0], customer, orole });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading edit page");
+    }
 });
 
 app.post("/update_punchinp_details", check_user_login, async (req, res) => {
-    let d = req.body;
-    await exe(`
-        UPDATE punchingdept SET
-            p_operator_name=$1, p_shift=$2, p_machine=$3, p_customer=$4,
-            p_project_name=$5, p_set_name=$6, p_material=$7, p_sheetqty=$8,
-            p_length=$9, p_width=$10, p_thickness=$11, p_totalweight=$12,
-            p_start_time=$13, p_end_time=$14, p_time=$15, p_m_processtime=$16,
-            p_mureason=$17, other_gmr=$18, p_mjustification=$19, p_rejectionqty=$20
-        WHERE p_id=$21
-    `, [
-        d.p_operator_name, d.p_shift, d.p_machine, d.p_customer, d.p_project_name,
-        d.p_set_name, d.p_material, d.p_sheetqty, d.p_length, d.p_width, d.p_thickness,
-        d.p_totalweight, d.p_start_time, d.p_end_time, d.p_process_time, d.p_m_processtime,
-        d.p_mureason, d.other_gmr, d.p_mjustification, d.p_rejectionqty, d.p_id
-    ]);
-    if (req.session.oname.role === "admin") res.redirect("/admin_punching_dashboard");
-    else res.redirect("/punchingproductionrecord");
+    try {
+        let d = req.body;
+        await exe(`
+            UPDATE punchingdept SET
+                p_operator_name=$1, p_shift=$2, p_machine=$3, p_customer=$4,
+                p_project_name=$5, p_set_name=$6, p_material=$7, p_sheetqty=$8,
+                p_length=$9, p_width=$10, p_thickness=$11, p_totalweight=$12,
+                p_start_time=$13, p_end_time=$14, p_time=$15, p_m_processtime=$16,
+                p_mureason=$17, other_gmr=$18, p_mjustification=$19, p_rejectionqty=$20
+            WHERE p_id=$21
+        `, [
+            d.p_operator_name, d.p_shift, d.p_machine, d.p_customer, d.p_project_name,
+            d.p_set_name, d.p_material, d.p_sheetqty, d.p_length, d.p_width, d.p_thickness,
+            d.p_totalweight, d.p_start_time, d.p_end_time, d.p_process_time || d.p_time,
+            d.p_m_processtime, d.p_mureason, d.other_gmr, d.p_mjustification, d.p_rejectionqty, d.p_id
+        ]);
+        
+        const redirectUrl = req.session.oname.role === "admin" 
+            ? "/admin_punching_dashboard" 
+            : "/punchingproductionrecord";
+        res.redirect(redirectUrl);
+    } catch (err) {
+        console.error(err);
+        res.send(`<script>alert('Error Updating Record: ${err.message}'); window.history.back();</script>`);
+    }
 });
 
 app.get("/punchingdelete/:id", check_user_login, async (req, res) => {
-    let id = req.params.id;
-    await exe("DELETE FROM punchingdept WHERE p_id=$1", [id]);
-    if (req.session.oname.role === "admin") res.redirect("/admin_punching_dashboard");
-    else res.redirect("/punchingproductionrecord");
+    try {
+        let id = req.params.id;
+        await exe("DELETE FROM punchingdept WHERE p_id=$1", [id]);
+        const redirectUrl = req.session.oname.role === "admin" 
+            ? "/admin_punching_dashboard" 
+            : "/punchingproductionrecord";
+        res.redirect(redirectUrl);
+    } catch (err) {
+        console.error(err);
+        res.send(`<script>alert('Error Deleting Record: ${err.message}'); window.history.back();</script>`);
+    }
 });
 
 app.get("/admin_punching_dashboard", check_user_login, async (req, res) => {
-    let d = req.session.oname.oname;
-    let records = await exe("SELECT * FROM punchingdept ORDER BY p_id DESC");
-    let customer = await exe("SELECT * FROM customers");
-    let material = await exe("SELECT * FROM material");
-    let project = await exe("SELECT * FROM project");
-    res.render("admin_punching_dashboard.ejs", { records, d, customer, material, project });
+    try {
+        let d = req.session.oname.oname;
+        let [records, customer, material, project] = await Promise.all([
+            exe("SELECT * FROM punchingdept ORDER BY p_id DESC"),
+            exe("SELECT * FROM customers"),
+            exe("SELECT * FROM material"),
+            exe("SELECT * FROM project")
+        ]);
+        res.render("admin_punching_dashboard.ejs", { records, d, customer, material, project });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading dashboard");
+    }
 });
 
 // ---------- START SERVER ----------
 app.listen(PORT, () => {
-    console.log(`Server Running on http://localhost:${PORT}`);
+    console.log(`🚀 Server Running on http://localhost:${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Graceful shutdown
-process.on("SIGINT", async () => {
+const shutdown = async () => {
+    console.log('\n👋 Shutting down gracefully...');
     await pool.end();
-    console.log("Database pool closed");
+    console.log('✅ Database pool closed');
     process.exit(0);
-});
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
