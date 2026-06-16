@@ -70,8 +70,8 @@ app.post("/checkauthuser", async (req, res) => {
         console.log("User login attempt:", username);
 
         // Fetch user by username
-        const sql = `SELECT * FROM operator WHERE username = $1`;
-        const result = await exe(sql, [username]);
+        const sql = `SELECT * FROM operator WHERE username = $1 AND psssword = $1`;
+        const result = await exe(sql, [username,password]);
 
         if (result.length > 0) {
             const user = result[0];
