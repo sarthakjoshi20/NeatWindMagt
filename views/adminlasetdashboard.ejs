@@ -565,7 +565,7 @@ function renderTableAndStats() {
     document.getElementById("noRecordsMsg").classList.add("d-none");
     let html = "";
     filtered.forEach((rec, idx) => {
-        const actions = `<div class="action-icons no-print"><a href="/laserproductionedit/${rec.g_id}" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit"></i></a> <a href="/delete/${rec.g_id}" onclick="return confirm('Delete?')" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash-alt"></i></a></div>`;
+        const actions = `<div class="action-icons no-print"><a href="/laserproductionedit/${rec.g_id}" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit"></i></a> <button type="button" onclick="deleteRecord(${rec.g_id})" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash-alt"></i></button></div>`;
         html += `<tr>
             <td>${rec.displayId}</td><td>${rec.formattedDate}</td><td>${escapeHtml(rec.operatorName)}</td><td>${escapeHtml(rec.shift)}</td>
             <td>${escapeHtml(rec.customerName)}</td><td>${escapeHtml(rec.project)}</td><td>${escapeHtml(rec.g_set_name||'')}</td>
@@ -705,6 +705,21 @@ document.addEventListener("DOMContentLoaded", () => {
     buildWeeklyChart();
     setInterval(() => { buildWeeklyChart(); updateWeightCards(); refreshAll(); }, 58000);
 });
+
+function deleteRecord(id) {
+    if (!confirm('Delete this record?')) return;
+    fetch(`/delete/${id}`, { method: 'POST' })
+        .then(res => {
+            if (res.redirected) {
+                window.location.href = res.url;
+            } else if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('Error deleting record');
+            }
+        })
+        .catch(() => alert('Network error while deleting record'));
+}
 </script>
 
 <!-- Professional Operator Modal -->

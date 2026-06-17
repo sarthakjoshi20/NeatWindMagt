@@ -36,18 +36,6 @@ app.use(session({
     }
 }));
 
-// node -e
-// const pool=new Pool({connectionString:process.env.DATABASE_URL});
-// (async()=>{
-//   const h=await bcrypt.hash('newpassword123',10);
-//   const c=await pool.connect();
-//   await c.query('UPDATE operator SET password=\$1 WHERE username=\$2',[h,'gauravmaharanvar']);
-//   console.log('Password reset done');
-//   c.release();
-//   await pool.end();
-// })();
-
-
 // ============ DATABASE CONFIGURATION ============
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -129,7 +117,8 @@ function check_user_login(req, res, next) {
 // ============ INPUT SANITIZATION HELPER ============
 function sanitize(value) {
     if (value === undefined || value === null) return null;
-    return String(value).trim();
+    const trimmed = String(value).trim();
+    return trimmed === '' ? null : trimmed;
 }
 
 // ---------- Routes ----------
@@ -555,12 +544,31 @@ app.listen(PORT, () => {
 });
 
 // Graceful shutdown
-const shutdown = async () => {
-    console.log('\n👋 Shutting down gracefully...');
-    await pool.end();
-    console.log('✅ Database pool closed');
+let isShuttingDown = false;
+const shutdown = async (signal) => {
+    if (isShuttingDown) {
+        console.log(`⚠️  Shutdown already in progress, ignoring duplicate ${signal}`);
+        return;
+    }
+    isShuttingDown = true;
+    console.log(`\n👋 Received ${signal}. Shutting down gracefully...`);
+    console.trace('Shutdown triggered from:');
+    try {
+        await pool.end();
+        console.log('✅ Database pool closed');
+    } catch (err) {
+        console.error('Error closing pool:', err.message);
+    }
     process.exit(0);
 };
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+// Catch unhandled errors so we can see what's actually happening
+process.on("unhandledRejection", (reason) => {
+    console.error('🔴 Unhandled Rejection:', reason);
+});
+process.on("uncaughtException", (err) => {
+    console.error('🔴 Uncaught Exception:', err);
+});
